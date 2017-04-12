@@ -36,7 +36,6 @@ void do_int3() {
 
 /* Simulate how the CPU works. */
 void cpu_exec(volatile uint32_t n) {
-    printf("%d\n", n);
 	if(nemu_state == END) {
 		printf("Program execution has ended. To restart the program, exit NEMU and run again.\n");
 		return;
@@ -58,7 +57,6 @@ void cpu_exec(volatile uint32_t n) {
 		}
 #endif
 
-        Log("%u\n", n);
 		/* Execute one instruction, including instruction fetch,
 		 * instruction decode, and the actual execution. */
 		int instr_len = exec(cpu.eip);
@@ -84,7 +82,6 @@ void cpu_exec(volatile uint32_t n) {
 
 		if(nemu_state != RUNNING) { return; }
 	}
-    Log("%d\n", n);
 
 	if(nemu_state == RUNNING) { nemu_state = STOP; }
 }

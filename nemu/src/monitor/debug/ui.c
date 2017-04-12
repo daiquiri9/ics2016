@@ -42,6 +42,8 @@ static int cmd_si(char *args);
 
 static int cmd_info(char *args);
 
+static int cmd_x(char *args);
+
 static struct {
 	char *name;
 	char *description;
@@ -54,6 +56,7 @@ static struct {
 	/* TODO: Add more commands */
     { "si", "Take [N](default: 1) more steps of the execution of the program", cmd_si},
     { "info", "Display informations about all registers or ...", cmd_info},
+    { "x", "Display memory starting from the given address by N * 4B", cmd_x},
 
 };
 
@@ -107,6 +110,10 @@ static int cmd_info(char *args) {
         }
         printf("eip: 0x%x\n", cpu.eip);
     }
+    return 0;
+}
+
+static int cmd_x(char *args) {
     return 0;
 }
 
