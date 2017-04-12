@@ -131,13 +131,13 @@ static int cmd_info(char *args) {
 }
 
 static int cmd_x(char *args) {
-    char *arg = strtok(NULL, " ");
+    /*char *arg = strtok(NULL, " ");*/
 
-    if(arg == NULL){
-        printf("Invalid arguments!\n");
-        printf("Usage: x N EXPR\n");
-        return 0;
-    }
+    /*if(arg == NULL){*/
+        /*printf("Invalid arguments!\n");*/
+        /*printf("Usage: x N EXPR\n");*/
+        /*return 0;*/
+    /*}*/
 
     uint32_t n, addr;
     sscanf(args, "%u %x", &n, &addr);
