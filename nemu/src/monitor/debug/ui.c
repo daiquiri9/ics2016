@@ -86,7 +86,7 @@ static int cmd_si(char *args) {
         cpu_exec(1);
     }
     else{
-        cpu_exec(*arg);
+        cpu_exec((int)*arg);
     }
     return 0;
 
