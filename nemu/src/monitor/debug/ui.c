@@ -134,7 +134,7 @@ static int cmd_x(char *args) {
     char *arg = strtok(NULL, " ");
 
     if(arg == NULL){
-        printf("Invalid command!\n");
+        printf("Invalid arguments!\n");
         printf("Usage: x N EXPR\n");
         return 0;
     }
@@ -144,6 +144,9 @@ static int cmd_x(char *args) {
 
     arg = strtok(NULL, " ");
     printf("%s\n", arg);
+
+    swaddr_t addr = atoi(arg);
+    swaddr_read(addr, n);
     return 0;
 }
 
