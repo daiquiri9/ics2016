@@ -143,7 +143,7 @@ static int cmd_x(char *args) {
     sscanf(args, "%u %x", &n, &addr);
 
     uint32_t info = swaddr_read(addr + (n * 4), 4);
-    printf("%u\n", info);
+    printf("%x\n", info);
 
     return 0;
 }
