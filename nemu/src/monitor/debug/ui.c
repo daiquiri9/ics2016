@@ -99,7 +99,7 @@ static int cmd_si(char *args) {
         cpu_exec((volatile uint32_t)n);
     }
     else{
-        printf("Invalid command!\n");
+        printf("Invalid argument!\n");
         printf("Usage: si N\n");
     }
     return 0;
@@ -110,7 +110,7 @@ static int cmd_info(char *args) {
     char *arg = strtok(NULL, " ");
 
     if(arg == NULL){
-        printf("Invalid command!\n");
+        printf("Must be followed with an argument!\n");
         printf("Usage: info r\n");
         return 0;
     }
@@ -122,6 +122,10 @@ static int cmd_info(char *args) {
             printf("%s: 0x%x\n", regsl[i], reg_l(i));
         }
         printf("eip: 0x%x\n", cpu.eip);
+    }
+    else{
+        printf("Invalid argument!\n"); 
+        printf("Usage: info r\n");
     }
     return 0;
 }
