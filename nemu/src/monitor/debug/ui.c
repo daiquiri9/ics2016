@@ -54,7 +54,7 @@ static struct {
 	{ "q", "Exit NEMU", cmd_q },
 
 	/* TODO: Add more commands */
-    { "si", "Take [N](default: 1) more steps of the execution of the program", cmd_si},
+    { "si", "Take N(default: 1) more steps of the execution of the program", cmd_si},
     { "info", "Display informations about all registers or ...", cmd_info},
     { "x", "Display memory starting from the given address by N * 4B", cmd_x},
 
@@ -114,6 +114,12 @@ static int cmd_info(char *args) {
 }
 
 static int cmd_x(char *args) {
+    char *arg = strtok(NULL, " ");
+    int n = atoi(arg);
+    printf("%d\n", n);
+
+    arg = strtok(NULL, " ");
+    printf("%s\n", arg);
     return 0;
 }
 
