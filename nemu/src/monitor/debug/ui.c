@@ -86,6 +86,7 @@ static int cmd_si(char *args) {
         cpu_exec(1);
     }
     else{
+        printf("%d", *arg);
         cpu_exec((volatile uint32_t)*arg);
     }
     return 0;
