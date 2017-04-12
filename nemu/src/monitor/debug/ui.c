@@ -101,7 +101,7 @@ static int cmd_info(char *args) {
 
     if(*arg == 'r'){
 
-        printf("%d", cpu.eip);
+        printf("%x\n", cpu.eip);
     }
     return 0;
 }
