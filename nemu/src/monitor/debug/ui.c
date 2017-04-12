@@ -100,7 +100,11 @@ static int cmd_info(char *args) {
     char *arg = strtok(NULL, " ");
 
     if(*arg == 'r'){
+        int i = 0;
 
+        for(i = R_EAX; i <= R_EDI; i++){
+            printf("%s: 0x%x", regsl[i], reg_l(i));
+        }
         printf("%x\n", cpu.eip);
     }
     return 0;
