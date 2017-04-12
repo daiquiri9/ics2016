@@ -102,17 +102,17 @@ static int cmd_si(char *args) {
 static int cmd_info(char *args) {
     char *arg = strtok(NULL, " ");
 
-    if(*arg == 'r'){
+    if(arg == NULL){
+        printf("Invalid command!\n");
+        printf("Usage: info r\n");
+    }
+    else if(*arg == 'r'){
         int i = 0;
 
         for(i = R_EAX; i <= R_EDI; i++){
             printf("%s: 0x%x\n", regsl[i], reg_l(i));
         }
         printf("eip: 0x%x\n", cpu.eip);
-    }
-    else{
-        printf("Invalid command!\n");
-        printf("Usage: info r\n");
     }
     return 0;
 }
