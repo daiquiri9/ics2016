@@ -139,14 +139,12 @@ static int cmd_x(char *args) {
         return 0;
     }
 
-    int n = atoi(arg);
-    printf("%d\n", n);
+    uint32_t n, addr;
+    sscanf(args, "%u %x", &n, &addr);
 
-    arg = strtok(NULL, " ");
-    printf("%s\n", arg);
+    uint32_t info = swaddr_read(addr + (n * 4), 4);
+    printf("%u\n", info);
 
-    swaddr_t addr = atoi(arg);
-    swaddr_read(addr, n);
     return 0;
 }
 
