@@ -110,6 +110,10 @@ static int cmd_info(char *args) {
         }
         printf("eip: 0x%x\n", cpu.eip);
     }
+    else{
+        printf("Invalid command!\n");
+        printf("Usage: info r\n");
+    }
     return 0;
 }
 
