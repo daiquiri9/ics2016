@@ -40,6 +40,8 @@ static int cmd_help(char *args);
 
 static int cmd_si(char *args);
 
+static int cmd_info(char *args);
+
 static struct {
 	char *name;
 	char *description;
@@ -51,6 +53,7 @@ static struct {
 
 	/* TODO: Add more commands */
     { "si", "Take [N](default: 1) more steps of the execution of the program", cmd_si},
+    { "info", "Display informations about all registers or ...", cmd_info},
 
 };
 
@@ -86,11 +89,21 @@ static int cmd_si(char *args) {
         cpu_exec(1);
     }
     else{
-        /*cpu_exec((volatile uint32_t)*arg);*/
+        /*cpu_exec(atoi(arg));*/
         cpu_exec((volatile uint32_t)atoi(arg));
     }
     return 0;
 
+}
+
+static int cmd_info(char *args) {
+    char *arg = strtok(NULL, " ");
+
+    if(*arg == 'r'){
+
+        printf("%d", cpu.eip);
+    }
+    return 0;
 }
 
 void ui_mainloop() {
