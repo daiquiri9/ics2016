@@ -90,10 +90,17 @@ static int cmd_si(char *args) {
 
     if(arg == NULL){
         cpu_exec(1);
+        return 0;
+    }
+
+    int n = atoi(arg);
+    if(n){
+        /*cpu_exec(atoi(arg));*/
+        cpu_exec((volatile uint32_t)n);
     }
     else{
-        /*cpu_exec(atoi(arg));*/
-        cpu_exec((volatile uint32_t)atoi(arg));
+        printf("Invalid command!\n");
+        printf("Usage: si N\n");
     }
     return 0;
 
@@ -105,8 +112,10 @@ static int cmd_info(char *args) {
     if(arg == NULL){
         printf("Invalid command!\n");
         printf("Usage: info r\n");
+        return 0;
     }
-    else if(*arg == 'r'){
+
+    if(*arg == 'r'){
         int i = 0;
 
         for(i = R_EAX; i <= R_EDI; i++){
@@ -119,6 +128,13 @@ static int cmd_info(char *args) {
 
 static int cmd_x(char *args) {
     char *arg = strtok(NULL, " ");
+
+    if(arg == NULL){
+        printf("Invalid command!\n");
+        printf("Usage: x N EXPR\n");
+        return 0;
+    }
+
     int n = atoi(arg);
     printf("%d\n", n);
 
