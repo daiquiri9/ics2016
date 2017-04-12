@@ -86,17 +86,32 @@ static int cmd_help(char *args) {
 }
 
 static int cmd_si(char *args) {
-    char *arg = strtok(NULL, " ");
+    /*char *arg = strtok(NULL, " ");*/
 
-    if(arg == NULL){
+    /*if(arg == NULL){*/
+        /*cpu_exec(1);*/
+        /*return 0;*/
+    /*}*/
+
+    /*int n = atoi(arg);*/
+    /*if(n){*/
+        /*[>cpu_exec(atoi(arg));<]*/
+        /*cpu_exec((volatile uint32_t)n);*/
+    /*}*/
+    /*else{*/
+        /*printf("Invalid argument!\n");*/
+        /*printf("Usage: si N\n");*/
+    /*}*/
+
+    if(!args){
         cpu_exec(1);
         return 0;
     }
 
-    int n = atoi(arg);
+    uint32_t n;
+    sscanf(args, "%u", &n);
     if(n){
-        /*cpu_exec(atoi(arg));*/
-        cpu_exec((volatile uint32_t)n);
+        cpu_exec(n);
     }
     else{
         printf("Invalid argument!\n");
@@ -131,19 +146,13 @@ static int cmd_info(char *args) {
 }
 
 static int cmd_x(char *args) {
-    /*char *arg = strtok(NULL, " ");*/
-
-    /*if(arg == NULL){*/
-        /*printf("Invalid arguments!\n");*/
-        /*printf("Usage: x N EXPR\n");*/
-        /*return 0;*/
-    /*}*/
-
-    uint32_t n, addr;
+    uint32_t n, addr, i;
     sscanf(args, "%u %x", &n, &addr);
 
-    uint32_t info = swaddr_read(addr + (n * 4), 4);
-    printf("%x\n", info);
+    for(i = 0; i < n; i++){
+        uint32_t info = swaddr_read(addr + (i * 4), 4);
+        printf("%x\n", info);
+    }
 
     return 0;
 }
