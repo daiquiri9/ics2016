@@ -41,6 +41,7 @@ static int cmd_help(char *args);
 static int cmd_si(char *args);
 
 static int cmd_info(char *args);
+static void info_reg();
 
 static int cmd_x(char *args);
 
@@ -122,27 +123,41 @@ static int cmd_si(char *args) {
 }
 
 static int cmd_info(char *args) {
-    char *arg = strtok(NULL, " ");
-
-    if(arg == NULL){
+    if(args == NULL){
         printf("Must be followed with an argument!\n");
         printf("Usage: info r\n");
         return 0;
     }
 
-    if(*arg == 'r'){
-        int i = 0;
+    char arg;
+    sscanf(args, "%c", &arg);
 
-        for(i = R_EAX; i <= R_EDI; i++){
-            printf("%s: 0x%x\n", regsl[i], reg_l(i));
-        }
-        printf("eip: 0x%x\n", cpu.eip);
+    if(arg == 'r'){
+        info_reg();
     }
+
+    /*if(*arg == 'r'){*/
+        /*int i = 0;*/
+
+        /*for(i = R_EAX; i <= R_EDI; i++){*/
+            /*printf("%s: 0x%x\n", regsl[i], reg_l(i));*/
+        /*}*/
+        /*printf("eip: 0x%x\n", cpu.eip);*/
+    /*}*/
     else{
         printf("Invalid argument!\n"); 
         printf("Usage: info r\n");
     }
     return 0;
+}
+
+static void info_reg() {
+    int i = 0;
+
+    for(i = R_EAX; i <= R_EDI; i++){
+        printf("%s: 0x%x\n", regsl[i], reg_l(i));
+    }
+    printf("eip: 0x%x\n", cpu.eip);
 }
 
 static int cmd_x(char *args) {
