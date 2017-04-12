@@ -87,7 +87,7 @@ static int cmd_si(char *args) {
     }
     else{
         /*cpu_exec((volatile uint32_t)*arg);*/
-        cpu_exec(atoi(arg));
+        cpu_exec((volatile uint32_t)atoi(arg));
     }
     return 0;
 
