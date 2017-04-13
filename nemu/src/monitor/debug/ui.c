@@ -152,12 +152,14 @@ static void info_reg() {
 }
 
 static int cmd_x(char *args) {
-    uint32_t n, addr, i;
+    uint32_t n, addr, i, j;
     sscanf(args, "%u %x", &n, &addr);
 
     for(i = 0; i < n; i++){
-        uint32_t info = swaddr_read(addr + (i * 4), 4);
-        printf("0x%08x\n", info);
+        for(j = 0; j < 4; j++){
+            uint32_t info = swaddr_read(addr + ((i + j) * 4), 4);
+            printf("0x%08x\n", info);
+        }
     }
 
     return 0;
