@@ -157,11 +157,10 @@ static int cmd_x(char *args) {
 
     for(i = 0; i < n; i++){
         printf("0x%08x:\t", addr);
-        for(j = 0; j < 4; j++){
+        for(j = 0; i + j < n && j < 4; j++){
             uint32_t info = swaddr_read(addr + ((i + j) * 4), 4);
             printf("0x%08x\t", info);
         }
-        i += 4;
         printf("\n");
     }
 
