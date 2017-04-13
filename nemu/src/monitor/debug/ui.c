@@ -155,10 +155,10 @@ static int cmd_x(char *args) {
     uint32_t n, addr, i, j;
     sscanf(args, "%u %x", &n, &addr);
 
-    for(i = 0; i < n; i++){
+    for(i = 0; i < n; i += 4){
         printf("0x%08x:\t", addr);
         for(j = 0; (i + j) < n && j < 4; j++){
-            uint32_t info = swaddr_read(addr + ((i + j) * 4), 4);
+            uint32_t info = swaddr_read(addr + (i + j) * 4, 4);
             printf("0x%08x\t", info);
         }
         printf("\n");
