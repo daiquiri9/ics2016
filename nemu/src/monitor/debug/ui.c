@@ -157,7 +157,7 @@ static int cmd_x(char *args) {
 
     for(i = 0; i < n; i++){
         uint32_t info = swaddr_read(addr + (i * 4), 4);
-        printf("%x\n", info);
+        printf("0x%08x\n", info);
     }
 
     return 0;
