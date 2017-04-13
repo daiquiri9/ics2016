@@ -152,10 +152,8 @@ static void info_reg() {
 }
 
 static int cmd_x(char *args) {
-    char addr_str[20];
     uint32_t n, addr, i, j;
-    sscanf(args, "%u %s", &n, addr_str);
-    addr = atoi(addr_str);
+    sscanf(args, "%u %x", &n, &addr);
 
     for(i = 0; i < n; i++){
         printf("0x%08x:\t", addr);
