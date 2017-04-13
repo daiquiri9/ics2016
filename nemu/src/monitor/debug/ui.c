@@ -135,15 +135,6 @@ static int cmd_info(char *args) {
     if(arg == 'r'){
         info_reg();
     }
-
-    /*if(*arg == 'r'){*/
-        /*int i = 0;*/
-
-        /*for(i = R_EAX; i <= R_EDI; i++){*/
-            /*printf("%s: 0x%x\n", regsl[i], reg_l(i));*/
-        /*}*/
-        /*printf("eip: 0x%x\n", cpu.eip);*/
-    /*}*/
     else{
         printf("Invalid argument!\n"); 
         printf("Usage: info r\n");
