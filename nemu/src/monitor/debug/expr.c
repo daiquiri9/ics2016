@@ -117,6 +117,42 @@ static bool make_token(char *e) {
 	return true; 
 }
 
+static bool check_parentheses(int p, int q){
+    if(tokens[p].type != '(' || tokens[q].type != ')'){
+        return false;
+    }
+
+    int open = 0, i;
+    for(i = p + 1; i < q; i++){
+        if(tokens[i].type == '('){
+            open++;
+        }
+        else if(tokens[i].type == ')'){
+            if(!open){
+                return false;
+            }
+            open--;
+        }
+    }
+
+    return open == 0 ? true : false;
+}
+
+static uint32_t eval(int p, int q){
+    if(p > q){
+
+    }
+    else if(p == q){
+
+    }
+    else if(check_parentheses(p, q) == true){
+        return eval(p + 1, q - 1);
+    }
+    else{
+
+    }
+}
+
 uint32_t expr(char *e, bool *success) {
 	if(!make_token(e)) {
 		*success = false;
