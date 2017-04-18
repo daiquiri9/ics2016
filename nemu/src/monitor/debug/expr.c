@@ -5,6 +5,7 @@
  */
 #include <sys/types.h>
 #include <regex.h>
+#include <stdlib.h>
 
 enum {
 	NOTYPE = 256, EQ,
@@ -23,15 +24,15 @@ static struct rule {
 	 * Pay attention to the precedence level of different rules.
 	 */
 
-	{" +",	NOTYPE},				// spaces
-	{"\\+", '+'},					// plus
-    {"-", '-'},
-    {"\\*", '*'},
-    {"/", '/'},
-    {"\\(", '('},
-    {"\\)", ')'},
-	{"==", EQ},						// equal
-    {"[0-9]+", NUMBER},
+	{" +"     , NOTYPE} , // spaces
+	{"\\+"    , '+'}    , // plus
+    {"-"      , '-'}    ,
+    {"\\*"    , '*'}    ,
+    {"/"      , '/'}    ,
+    {"\\("    , '('}    ,
+    {"\\)"    , ')'}    ,
+	{"=="     , EQ}     , // equal
+    {"[0-9]+" , NUMBER} ,
 };
 
 #define NR_REGEX (sizeof(rules) / sizeof(rules[0]) )
@@ -117,38 +118,87 @@ static bool make_token(char *e) {
 	return true; 
 }
 
-static bool check_parentheses(int p, int q){
+static bool check_parentheses(int p, int q, bool *success){
+    bool surrounded = true;
+
     if(tokens[p].type != '(' || tokens[q].type != ')'){
-        return false;
+        surrounded = false;
     }
 
     int open = 0, i;
-    for(i = p + 1; i < q; i++){
+    for(i = p; i <= q; i++){    // start with p in case of ")...("
         if(tokens[i].type == '('){
             open++;
         }
         else if(tokens[i].type == ')'){
-            if(!open){
+            open--;
+            if(open < 0){
+                *success = false;
                 return false;
             }
-            open--;
+            else if(open == 0 && i != q){    // close p
+                surrounded = false;
+            }
         }
     }
 
-    return open == 0 ? true : false;
+    if(open){
+        *success = surrounded = false;
+    }
+    return surrounded;
 }
 
-static uint32_t eval(int p, int q){
-    if(p > q){
+static uint32_t get_dominant_operator(int p, int q, bool *success){
+    int i, open = 0, last_type = NOTYPE;
+    for(i = p; i <= q; i++){
+        int cur_type = tokens[i].type;
 
+        if(cur_type == '('){
+            open++;
+            continue;
+        }
+        else if(cur_type == ')'){
+            open--;
+            continue;
+        }
+
+        if(!open){
+            if(cur_type == last_type){
+                printf("Duplicate token %d!\n", cur_type);
+                *success = false;
+                return 0;
+            }
+
+            // TODO: add priority
+        }
+
+
+
+    }
+}
+
+static uint32_t eval(int p, int q, bool *success){
+    if(p > q){
+        printf("Bad expression!");
+        return 0;
     }
     else if(p == q){
-
+        if(tokens[p].type == NUMBER){
+            return strtol(tokens[p].str, NULL, 0);
+        }
+        else{
+            printf("Single token, need a NUMBER.\n");
+            return 0;
+        }
     }
-    else if(check_parentheses(p, q) == true){
-        return eval(p + 1, q - 1);
+    else if(check_parentheses(p, q, success) == true){
+        return eval(p + 1, q - 1, success);
     }
     else{
+        if(!success){
+            printf("Parentheses unmatched!\n");
+            return false;
+        }
 
     }
 }
