@@ -18,21 +18,22 @@ enum {
 static struct rule {
 	char *regex;
 	int token_type;
+    int priority;
 } rules[] = {
 
 	/* TODO: Add more rules.
 	 * Pay attention to the precedence level of different rules.
 	 */
 
-	{" +"     , NOTYPE} , // spaces
-	{"\\+"    , '+'}    , // plus
-    {"-"      , '-'}    ,
-    {"\\*"    , '*'}    ,
-    {"/"      , '/'}    ,
-    {"\\("    , '('}    ,
-    {"\\)"    , ')'}    ,
-	{"=="     , EQ}     , // equal
-    {"[0-9]+" , NUMBER} ,
+	{" +"     , NOTYPE , 0}   , // spaces
+    {"[0-9]+" , NUMBER , 1}   ,
+	{"=="     , EQ     , 30}  ,
+	{"\\+"    , '+'    , 51}  ,
+    {"-"      , '-'    , 51}  ,
+    {"\\*"    , '*'    , 52}  ,
+    {"/"      , '/'    , 52}  ,
+    {"\\("    , '('    , 100} ,
+    {"\\)"    , ')'    , 100} ,
 };
 
 #define NR_REGEX (sizeof(rules) / sizeof(rules[0]) )
@@ -59,6 +60,7 @@ void init_regex() {
 typedef struct token {
 	int type;
 	char str[32];
+    int priority;
 } Token;
 
 Token tokens[32];
@@ -89,10 +91,6 @@ static bool make_token(char *e) {
 				switch(rules[i].token_type) {
                     case NOTYPE:
                         break;
-                    case EQ:
-                        
-                        tokens[nr_token++].type = EQ;
-                        break;
                     case NUMBER:
                         if(substr_len >= 31){
                             assert(0);
@@ -102,6 +100,7 @@ static bool make_token(char *e) {
                         tokens[nr_token++].type = NUMBER;
                         break;
 					default:
+                        tokens[nr_token].priority = rules[i].priority;
                         tokens[nr_token++].type = rules[i].token_type;
 				}
 
@@ -148,10 +147,14 @@ static bool check_parentheses(int p, int q, bool *success){
     return surrounded;
 }
 
-static uint32_t get_dominant_operator(int p, int q, bool *success){
-    int i, open = 0, last_type = NOTYPE;
-    for(i = p; i <= q; i++){
+static uint32_t get_dominant_operator(int p, int q){
+    int open = 0;
+    int last_type = NOTYPE;
+    int op, min = 100;
+
+    for(int i = p; i <= q; i++){
         int cur_type = tokens[i].type;
+        int cur_priority = tokens[i].priority;
 
         if(cur_type == '('){
             open++;
@@ -162,19 +165,31 @@ static uint32_t get_dominant_operator(int p, int q, bool *success){
             continue;
         }
 
-        if(!open){
-            if(cur_type == last_type){
-                printf("Duplicate token %d!\n", cur_type);
-                *success = false;
-                return 0;
-            }
+        if(open) continue;
 
-            // TODO: add priority
+        if(cur_type == last_type){
+            printf("Duplicate token %d!\n", cur_type);
+            return 0;
         }
+        last_type = cur_type;
 
-
-
+        switch(cur_type){
+            case '+':
+            case '-':
+            case '*':
+            case '/':
+            case EQ:
+                if(min >= cur_priority){
+                    op = cur_type;
+                    min = cur_priority;
+                }
+                break;
+            default:
+                break;
+        }
     }
+
+    return op;
 }
 
 static uint32_t eval(int p, int q, bool *success){
@@ -197,7 +212,17 @@ static uint32_t eval(int p, int q, bool *success){
     else{
         if(!success){
             printf("Parentheses unmatched!\n");
-            return false;
+            return 0;
+        }
+
+        uint32_t op = get_dominant_operator(p, q);
+        switch(op){
+            case 0:
+                printf("Syntax error!\n");
+                /*return 0;*/
+                break;
+            default:
+                break;
         }
 
     }
