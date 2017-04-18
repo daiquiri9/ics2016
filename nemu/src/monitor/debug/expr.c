@@ -150,7 +150,7 @@ static bool check_parentheses(int p, int q, bool *success){
 static uint32_t get_dominant_operator(int p, int q){
     int open = 0;
     int last_type = NOTYPE;
-    int op, min = 100;
+    int op = -1, min = 100;
 
     for(int i = p; i <= q; i++){
         int cur_type = tokens[i].type;
@@ -161,15 +161,20 @@ static uint32_t get_dominant_operator(int p, int q){
             continue;
         }
         else if(cur_type == ')'){
+            last_type = NUMBER;    // take (...) as a NUMBER
             open--;
             continue;
         }
 
         if(open) continue;
 
-        if(cur_type == last_type){
-            printf("Duplicate token %d!\n", cur_type);
-            return 0;
+        /*if(cur_type == last_type){*/
+            /*printf("Duplicate token %d!\n", cur_type);*/
+            /*return -1;*/
+        /*}*/
+        if( (last_type == NUMBER && cur_type == NUMBER) ||
+            (last_type != NUMBER && cur_type != NUMBER) ){
+            return -1;
         }
         last_type = cur_type;
 
@@ -180,7 +185,7 @@ static uint32_t get_dominant_operator(int p, int q){
             case '/':
             case EQ:
                 if(min >= cur_priority){
-                    op = cur_type;
+                    op = i;
                     min = cur_priority;
                 }
                 break;
@@ -215,17 +220,31 @@ static uint32_t eval(int p, int q, bool *success){
             return 0;
         }
 
-        uint32_t op = get_dominant_operator(p, q);
-        switch(op){
-            case 0:
-                printf("Syntax error!\n");
-                /*return 0;*/
-                break;
+        int op = get_dominant_operator(p, q);
+        if(op < 0){
+            printf("Syntax error!\n");
+            return 0;
+        }
+
+        uint32_t val1 = eval(p, op - 1, success);
+        uint32_t val2 = eval(op + 1, q, success);
+        switch(tokens[op].type){
+            case '+':
+                return val1 + val2;
+            case '-':
+                return val1 - val2;
+            case '*':
+                return val1 * val2;
+            case '/':
+                return val1 / val2;
+            case EQ:
+                return val1 == val2;
             default:
                 break;
         }
-
     }
+
+    return 0;
 }
 
 uint32_t expr(char *e, bool *success) {
@@ -235,7 +254,8 @@ uint32_t expr(char *e, bool *success) {
 	}
 
 	/* TODO: Insert codes to evaluate the expression. */
-	panic("please implement me");
+	/*panic("please implement me");*/
+    eval(0, nr_token - 1, success);
 	return 0;
 }
 
