@@ -8,10 +8,8 @@
 #include <stdlib.h>
 
 enum {
-	NOTYPE = 256, EQ,
-
-	/* TODO: Add more token types */
-    NUMBER,
+	NOTYPE = 256, EQ, NEQ, LG_AND, LG_OR, DEREF,
+    DEC_NUM = 512, HEX_NUM, REG
 
 };
 
@@ -25,15 +23,21 @@ static struct rule {
 	 * Pay attention to the precedence level of different rules.
 	 */
 
-	{" +"     , NOTYPE , 0}   , // spaces
-    {"[0-9]+" , NUMBER , 1}   ,
-	{"=="     , EQ     , 30}  ,
-	{"\\+"    , '+'    , 51}  ,
-    {"-"      , '-'    , 51}  ,
-    {"\\*"    , '*'    , 52}  ,
-    {"/"      , '/'    , 52}  ,
-    {"\\("    , '('    , 100} ,
-    {"\\)"    , ')'    , 100} ,
+	{" +"             , NOTYPE  , 0}   , // spaces
+    {"0x[0-9a-fA-F]+" , HEX_NUM , 1}   , // HEX before DEC, in case of 0
+    {"[0-9]+"         , DEC_NUM , 1}   ,
+    {"\\$[a-z]+"      , REG     , 2}   ,
+    {"\\|\\|"         , LG_OR   , 20}  ,
+    {"&&"             , LG_AND  , 21}  ,
+	{"=="             , EQ      , 30}  ,
+    {"!="             , NEQ     , 30}  , // != before !
+    {"!"              , '!'     , 60}  ,
+	{"\\+"            , '+'     , 51}  ,
+    {"-"              , '-'     , 51}  ,
+    {"\\*"            , '*'     , 52}  ,
+    {"/"              , '/'     , 52}  ,
+    {"\\("            , '('     , 100} ,
+    {"\\)"            , ')'     , 100} ,
 };
 
 #define NR_REGEX (sizeof(rules) / sizeof(rules[0]) )
@@ -91,15 +95,19 @@ static bool make_token(char *e) {
 				switch(rules[i].token_type) {
                     case NOTYPE:
                         break;
-                    case NUMBER:
+                    case DEC_NUM:
+                    case HEX_NUM:
                         if(substr_len >= 31){
                             assert(0);
                         }
                         strncpy(tokens[nr_token].str, substr_start, substr_len);
                         tokens[nr_token].str[substr_len] = '\0';
-                        tokens[nr_token++].type = NUMBER;
+                        tokens[nr_token].priority = rules[i].priority;
+                        tokens[nr_token++].type = rules[i].token_type;
                         break;
 					default:
+                        strncpy(tokens[nr_token].str, substr_start, substr_len);
+                        tokens[nr_token].str[substr_len] = '\0';
                         tokens[nr_token].priority = rules[i].priority;
                         tokens[nr_token++].type = rules[i].token_type;
 				}
@@ -117,40 +125,33 @@ static bool make_token(char *e) {
 	return true; 
 }
 
-static bool check_parentheses(int p, int q, bool *success){
-    bool surrounded = true;
-
-    if(tokens[p].type != '(' || tokens[q].type != ')'){
-        surrounded = false;
-    }
-
-    int open = 0, i;
-    for(i = p; i <= q; i++){    // start with p in case of ")...("
-        if(tokens[i].type == '('){
-            open++;
-        }
-        else if(tokens[i].type == ')'){
-            open--;
-            if(open < 0){
-                *success = false;
-                return false;
+static bool check_parentheses(int p, int q){
+    if(tokens[p].type == '(' && tokens[q].type == ')'){
+        int open = 0;
+        for(int i = p + 1; i < q; i++){
+            if(tokens[i].type == '('){
+                open++;
             }
-            else if(open == 0 && i != q){    // close p
-                surrounded = false;
+            else if(tokens[i].type == ')'){
+                open--;
+                if(open < 0){
+                    // TODO *success and error position ?
+                    return false;
+                }
             }
         }
-    }
 
-    if(open){
-        *success = surrounded = false;
+        if(open == 0){
+            return true;
+        }
     }
-    return surrounded;
+    return false;
 }
 
 static uint32_t get_dominant_operator(int p, int q){
     int open = 0;
     int last_type = NOTYPE;
-    int op = -1, min = 100;
+    int op = -1, lowest = 100;
 
     for(int i = p; i <= q; i++){
         int cur_type = tokens[i].type;
@@ -161,22 +162,11 @@ static uint32_t get_dominant_operator(int p, int q){
             continue;
         }
         else if(cur_type == ')'){
-            last_type = NUMBER;    // take (...) as a NUMBER
+            /*last_type = DEC_NUM;    // take (...) as a DEC_NUM*/
             open--;
             continue;
         }
-
-        if(open) continue;
-
-        /*if(cur_type == last_type){*/
-            /*printf("Duplicate token %d!\n", cur_type);*/
-            /*return -1;*/
-        /*}*/
-        if( (last_type == NUMBER && cur_type == NUMBER) ||
-            (last_type != NUMBER && cur_type != NUMBER) ){
-            return -1;
-        }
-        last_type = cur_type;
+        if(open > 0) continue;
 
         switch(cur_type){
             case '+':
@@ -184,9 +174,9 @@ static uint32_t get_dominant_operator(int p, int q){
             case '*':
             case '/':
             case EQ:
-                if(min >= cur_priority){
+                if(lowest >= cur_priority){ // the bigger, the lower
                     op = i;
-                    min = cur_priority;
+                    lowest = cur_priority;
                 }
                 break;
             default:
@@ -197,32 +187,39 @@ static uint32_t get_dominant_operator(int p, int q){
     return op;
 }
 
+static void syntax_error(int i, char *msg){
+    printf("Syntax error near tokens[%d]:%s, %s\n", i, tokens[i].str, msg);
+    /*printf("Syntax error near tokens[%d]:%s\n", i, tokens[i].str);*/
+}
+
 static uint32_t eval(int p, int q, bool *success){
+    if(!*success){
+        return 0;
+    }
+
     if(p > q){
-        printf("Bad expression!");
+        syntax_error(q, "invalid operand.");
+        *success = false;
         return 0;
     }
     else if(p == q){
-        if(tokens[p].type == NUMBER){
+        if(tokens[p].type >= DEC_NUM){
             return strtol(tokens[p].str, NULL, 0);
         }
         else{
-            printf("Single token, need a NUMBER.\n");
+            syntax_error(p, "need operands.");
+            *success = false;
             return 0;
         }
     }
-    else if(check_parentheses(p, q, success) == true){
+    else if(check_parentheses(p, q) == true){
         return eval(p + 1, q - 1, success);
     }
     else{
-        if(!success){
-            printf("Parentheses unmatched!\n");
-            return 0;
-        }
-
         int op = get_dominant_operator(p, q);
         if(op < 0){
-            printf("Syntax error!\n");
+            syntax_error(p, "no dominant operator");
+            *success = false;
             return 0;
         }
 
@@ -253,9 +250,14 @@ uint32_t expr(char *e, bool *success) {
 		return 0;
 	}
 
-	/* TODO: Insert codes to evaluate the expression. */
-	/*panic("please implement me");*/
-    eval(0, nr_token - 1, success);
-	return 0;
+    for(int i = 0; i < nr_token; i++){
+        if(tokens[i].type == '*' && (i == 0 || 
+                    (tokens[i - 1].type != ')' && tokens[i - 1].type < 512))){
+            tokens[i].type = DEREF;
+        } 
+    }
+
+    uint32_t val = eval(0, nr_token - 1, success);
+	return val;
 }
 
