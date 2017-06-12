@@ -8,7 +8,8 @@
 #include <stdlib.h>
 
 enum {
-	NOTYPE = 256, EQ, NEQ, LG_AND, LG_OR, DEREF,
+	NOTYPE = 256, EQ, NEQ, LG_AND, LG_OR,   // binary
+    DEREF, NEG,                             // unary
     REG = 512, DEC_NUM, HEX_NUM,
 
 };
@@ -32,6 +33,8 @@ static struct rule {
 	{"=="             , EQ      , 30}  ,
     {"!="             , NEQ     , 30}  , // != before !
     {"!"              , '!'     , 60}  ,
+    // DEREF, 60
+    // NEG,   60
 	{"\\+"            , '+'     , 51}  ,
     {"-"              , '-'     , 51}  ,
     {"\\*"            , '*'     , 52}  ,
@@ -168,8 +171,13 @@ static uint32_t get_dominant_operator(int p, int q){
             case '-':
             case '*':
             case '/':
+            case LG_OR:
+            case LG_AND:
             case EQ:
+            case NEQ:
+            case '!':
             case DEREF:
+            case NEG:
                 if(dominant >= cur_priority){ // dominant op has lowest priority
                     op = i;
                     dominant = cur_priority;
@@ -232,10 +240,10 @@ static uint32_t eval(int p, int q, bool *success){
 
         int op_type = tokens[op].type;
         uint32_t val1 = 0, val2 = 0;
-        if(op_type == '!' || op_type == DEREF){     //unary
+        if(op_type == '!' || op_type == DEREF || op_type == NEG){     //unary
             val1 = eval(op + 1, q, success);
         }
-        else{                                       //binary
+        else{                                                         //binary
             val1 = eval(p, op - 1, success);
             val2 = eval(op + 1, q, success);
         }
@@ -254,10 +262,20 @@ static uint32_t eval(int p, int q, bool *success){
                     return 0;
                 }
                 return val1 / val2;
+            case LG_OR:
+                return val1 || val2;
+            case LG_AND:
+                return val1 && val2;
             case EQ:
                 return val1 == val2;
+            case NEQ:
+                return val1 != val2;
+            case '!':
+                return !val1;
             case DEREF:
                 return swaddr_read(val1, 4);
+            case NEG:
+                return -val1;
             default:
                 break;
         }
@@ -273,11 +291,18 @@ uint32_t expr(char *e, bool *success) {
 	}
 
     for(int i = 0; i < nr_token; i++){
+        // * -> DEREF
         if(tokens[i].type == '*' && (i == 0 || 
                     (tokens[i - 1].type != ')' && tokens[i - 1].type < 512))){
             tokens[i].type = DEREF;
             tokens[i].priority = 60;
         } 
+        // - -> NEG
+        if(tokens[i].type == '-' && (i == 0 || 
+                    (tokens[i - 1].type != ')' && tokens[i - 1].type < 512))){
+            tokens[i].type = NEG;
+            tokens[i].priority = 60;
+        }
     }
 
     uint32_t val = eval(0, nr_token - 1, success);
