@@ -26,7 +26,7 @@ static struct rule {
 	{" +"             , NOTYPE  , 0}   , // spaces
     {"0x[0-9a-fA-F]+" , HEX_NUM , 1}   , // HEX before DEC, in case of 0
     {"[0-9]+"         , DEC_NUM , 1}   ,
-    {"\\$[a-zA-Z]+"   , REG     , 2}   ,
+    {"\\$[a-zA-Z]+"   , REG     , 1}   ,
     {"\\|\\|"         , LG_OR   , 20}  ,
     {"&&"             , LG_AND  , 21}  ,
 	{"=="             , EQ      , 30}  ,
@@ -84,8 +84,7 @@ static bool make_token(char *e) {
 				char *substr_start = e + position;
 				int substr_len = pmatch.rm_eo;
 
-				Log("match rules[%d] = \"%s\" at position %d with len %d: %.*s", i, 
-                    rules[i].regex, position, substr_len, substr_len, substr_start);
+				/*Log("match rules[%d] = \"%s\" at position %d with len %d: %.*s", i, rules[i].regex, position, substr_len, substr_len, substr_start);*/
 				position += substr_len;
 
 				/* TODO: Now a new token is recognized with rules[i]. Add codes
@@ -147,7 +146,7 @@ static bool check_parentheses(int p, int q){
 
 static uint32_t get_dominant_operator(int p, int q){
     int open = 0;
-    int op = -1, lowest = 100;
+    int op = -1, dominant = 100;
 
     for(int i = p; i <= q; i++){
         int cur_type = tokens[i].type;
@@ -159,6 +158,7 @@ static uint32_t get_dominant_operator(int p, int q){
         }
         else if(cur_type == ')'){
             open--;
+            if(open < 0) return i;
             continue;
         }
         if(open > 0) continue;
@@ -169,9 +169,10 @@ static uint32_t get_dominant_operator(int p, int q){
             case '*':
             case '/':
             case EQ:
-                if(lowest >= cur_priority){ // the bigger, the lower
+            case DEREF:
+                if(dominant >= cur_priority){ // dominant op has lowest priority
                     op = i;
-                    lowest = cur_priority;
+                    dominant = cur_priority;
                 }
                 break;
             default:
@@ -181,9 +182,10 @@ static uint32_t get_dominant_operator(int p, int q){
     return op;
 }
 
-static void syntax_error(int i, char *msg){
-    printf("Syntax error near tokens[%d]:%s, %s\n", i, tokens[i].str, msg);
-    /*printf("Syntax error near tokens[%d]:%s\n", i, tokens[i].str);*/
+static void syntax_error(int i, char *msg, bool *succ){
+    *succ = false;
+    /*printf("Tokens[%d]:%s, %s\n", i, tokens[i].str, msg);*/
+    printf("Syntax error near `%s`.\n", tokens[i].str);
 }
 
 static uint32_t eval(int p, int q, bool *success){
@@ -192,7 +194,7 @@ static uint32_t eval(int p, int q, bool *success){
     }
 
     if(p > q){
-        syntax_error(q, "invalid operand.");
+        syntax_error(q, "need operand.", success);
         return 0;
     }
     else if(p == q){
@@ -207,14 +209,14 @@ static uint32_t eval(int p, int q, bool *success){
                 if(strcasecmp(reg, regsb[i]) == 0) return reg_b(i);
             }
 
-            syntax_error(p, "invalid register.");
+            syntax_error(p, "invalid register.", success);
             return 0;
         }
         else if(tokens[p].type >= DEC_NUM){
             return strtol(tokens[p].str, NULL, 0);
         }
         else{
-            syntax_error(p, "need operands.");
+            syntax_error(p, "invalid operands.", success);
             return 0;
         }
     }
@@ -224,13 +226,21 @@ static uint32_t eval(int p, int q, bool *success){
     else{
         int op = get_dominant_operator(p, q);
         if(op < 0){
-            syntax_error(p, "no dominant operator");
+            syntax_error(p, "no dominant operator.", success);
             return 0;
         }
 
-        uint32_t val1 = eval(p, op - 1, success);
-        uint32_t val2 = eval(op + 1, q, success);
-        switch(tokens[op].type){
+        int op_type = tokens[op].type;
+        uint32_t val1 = 0, val2 = 0;
+        if(op_type == '!' || op_type == DEREF){     //unary
+            val1 = eval(op + 1, q, success);
+        }
+        else{                                       //binary
+            val1 = eval(p, op - 1, success);
+            val2 = eval(op + 1, q, success);
+        }
+
+        switch(op_type){
             case '+':
                 return val1 + val2;
             case '-':
@@ -239,7 +249,7 @@ static uint32_t eval(int p, int q, bool *success){
                 return val1 * val2;
             case '/':
                 if(val2 == 0){
-                    syntax_error(op, "Divided by 0!\n");
+                    if(*success) printf("Division by 0\n");
                     *success = false;
                     return 0;
                 }
@@ -247,9 +257,8 @@ static uint32_t eval(int p, int q, bool *success){
             case EQ:
                 return val1 == val2;
             case DEREF:
-                return swaddr_read(val2, 4);
+                return swaddr_read(val1, 4);
             default:
-                *success = false;
                 break;
         }
     }
@@ -267,6 +276,7 @@ uint32_t expr(char *e, bool *success) {
         if(tokens[i].type == '*' && (i == 0 || 
                     (tokens[i - 1].type != ')' && tokens[i - 1].type < 512))){
             tokens[i].type = DEREF;
+            tokens[i].priority = 60;
         } 
     }
 

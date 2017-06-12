@@ -45,6 +45,8 @@ static void info_reg();
 
 static int cmd_x(char *args);
 
+static int cmd_p(char *args);
+
 static struct {
 	char *name;
 	char *description;
@@ -58,6 +60,7 @@ static struct {
     { "si", "Take N(default: 1) more steps of the execution of the program", cmd_si},
     { "info", "Display informations about all registers or ...", cmd_info},
     { "x", "Display memory starting from the given address by N * 4B", cmd_x},
+    { "p", "Display the result of expression", cmd_p},
 
 };
 
@@ -153,6 +156,19 @@ static int cmd_x(char *args) {
         printf("\n");
     }
 
+    return 0;
+}
+
+static int cmd_p(char *args) {
+    if(args == NULL){
+        printf("Must be followed with an expression!\n");
+        printf("Usage: p $eax + 2 * 3\n");
+        return 0;
+    }
+
+    bool succ = true;
+    uint32_t result = expr(args, &succ);
+    if(succ) printf("0x%x\n", result);
     return 0;
 }
 
