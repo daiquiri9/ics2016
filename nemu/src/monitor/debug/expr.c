@@ -181,8 +181,8 @@ static uint32_t get_dominant_operator(int p, int q){
     return op;
 }
 
-static void syntax_error(int i, char *msg, bool *success){
-    *success = false;
+static void syntax_error(int i, char *msg){
+    /**success = false;*/
     printf("Syntax error near tokens[%d]:%s, %s\n", i, tokens[i].str, msg);
     /*printf("Syntax error near tokens[%d]:%s\n", i, tokens[i].str);*/
 }
@@ -193,7 +193,7 @@ static uint32_t eval(int p, int q, bool *success){
     }
 
     if(p > q){
-        syntax_error(q, "invalid operand.", success);
+        syntax_error(q, "invalid operand.");
         return 0;
     }
     else if(p == q){
@@ -208,14 +208,14 @@ static uint32_t eval(int p, int q, bool *success){
                 if(strcasecmp(reg, regsb[i]) == 0) return reg_b(i);
             }
 
-            syntax_error(p, "invalid register.", success);
+            syntax_error(p, "invalid register.");
             return 0;
         }
         else if(tokens[p].type >= DEC_NUM){
             return strtol(tokens[p].str, NULL, 0);
         }
         else{
-            syntax_error(p, "need operands.", success);
+            syntax_error(p, "need operands.");
             return 0;
         }
     }
@@ -225,7 +225,7 @@ static uint32_t eval(int p, int q, bool *success){
     else{
         int op = get_dominant_operator(p, q);
         if(op < 0){
-            syntax_error(p, "no dominant operator", success);
+            syntax_error(p, "no dominant operator");
             return 0;
         }
 
@@ -239,10 +239,16 @@ static uint32_t eval(int p, int q, bool *success){
             case '*':
                 return val1 * val2;
             case '/':
+                if(val2 == 0){
+                    syntax_error(op, "Divided by 0!\n");
+                    *success = false;
+                    return 0;
+                }
                 return val1 / val2;
             case EQ:
                 return val1 == val2;
             default:
+                *success = false;
                 break;
         }
     }
