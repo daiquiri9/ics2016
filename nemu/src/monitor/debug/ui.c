@@ -87,23 +87,6 @@ static int cmd_help(char *args) {
 }
 
 static int cmd_si(char *args) {
-    /*char *arg = strtok(NULL, " ");*/
-
-    /*if(arg == NULL){*/
-        /*cpu_exec(1);*/
-        /*return 0;*/
-    /*}*/
-
-    /*int n = atoi(arg);*/
-    /*if(n){*/
-        /*[>cpu_exec(atoi(arg));<]*/
-        /*cpu_exec((volatile uint32_t)n);*/
-    /*}*/
-    /*else{*/
-        /*printf("Invalid argument!\n");*/
-        /*printf("Usage: si N\n");*/
-    /*}*/
-
     if(!args){
         cpu_exec(1);
         return 0;
@@ -152,6 +135,12 @@ static void info_reg() {
 }
 
 static int cmd_x(char *args) {
+    if(args == NULL){
+        printf("Must be followed with arguments!\n");
+        printf("Usage: x N ADDR\n");
+        return 0;
+    }
+
     uint32_t n, addr, i, j;
     sscanf(args, "%u %i", &n, &addr);
 

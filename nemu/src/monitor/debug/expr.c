@@ -9,7 +9,7 @@
 
 enum {
 	NOTYPE = 256, EQ, NEQ, LG_AND, LG_OR, DEREF,
-    DEC_NUM = 512, HEX_NUM, REG
+    REG = 512, DEC_NUM, HEX_NUM,
 
 };
 
@@ -26,7 +26,7 @@ static struct rule {
 	{" +"             , NOTYPE  , 0}   , // spaces
     {"0x[0-9a-fA-F]+" , HEX_NUM , 1}   , // HEX before DEC, in case of 0
     {"[0-9]+"         , DEC_NUM , 1}   ,
-    {"\\$[a-z]+"      , REG     , 2}   ,
+    {"\\$[a-zA-Z]+"   , REG     , 2}   ,
     {"\\|\\|"         , LG_OR   , 20}  ,
     {"&&"             , LG_AND  , 21}  ,
 	{"=="             , EQ      , 30}  ,
@@ -84,7 +84,8 @@ static bool make_token(char *e) {
 				char *substr_start = e + position;
 				int substr_len = pmatch.rm_eo;
 
-				Log("match rules[%d] = \"%s\" at position %d with len %d: %.*s", i, rules[i].regex, position, substr_len, substr_len, substr_start);
+				Log("match rules[%d] = \"%s\" at position %d with len %d: %.*s", i, 
+                    rules[i].regex, position, substr_len, substr_len, substr_start);
 				position += substr_len;
 
 				/* TODO: Now a new token is recognized with rules[i]. Add codes
@@ -97,14 +98,11 @@ static bool make_token(char *e) {
                         break;
                     case DEC_NUM:
                     case HEX_NUM:
+                    case REG:
                         if(substr_len >= 31){
-                            assert(0);
+                            printf("Operand is too long!\n");
+                            return false;
                         }
-                        strncpy(tokens[nr_token].str, substr_start, substr_len);
-                        tokens[nr_token].str[substr_len] = '\0';
-                        tokens[nr_token].priority = rules[i].priority;
-                        tokens[nr_token++].type = rules[i].token_type;
-                        break;
 					default:
                         strncpy(tokens[nr_token].str, substr_start, substr_len);
                         tokens[nr_token].str[substr_len] = '\0';
@@ -135,7 +133,6 @@ static bool check_parentheses(int p, int q){
             else if(tokens[i].type == ')'){
                 open--;
                 if(open < 0){
-                    // TODO *success and error position ?
                     return false;
                 }
             }
@@ -150,7 +147,6 @@ static bool check_parentheses(int p, int q){
 
 static uint32_t get_dominant_operator(int p, int q){
     int open = 0;
-    int last_type = NOTYPE;
     int op = -1, lowest = 100;
 
     for(int i = p; i <= q; i++){
@@ -162,7 +158,6 @@ static uint32_t get_dominant_operator(int p, int q){
             continue;
         }
         else if(cur_type == ')'){
-            /*last_type = DEC_NUM;    // take (...) as a DEC_NUM*/
             open--;
             continue;
         }
@@ -183,11 +178,11 @@ static uint32_t get_dominant_operator(int p, int q){
                 break;
         }
     }
-
     return op;
 }
 
-static void syntax_error(int i, char *msg){
+static void syntax_error(int i, char *msg, bool *success){
+    *success = false;
     printf("Syntax error near tokens[%d]:%s, %s\n", i, tokens[i].str, msg);
     /*printf("Syntax error near tokens[%d]:%s\n", i, tokens[i].str);*/
 }
@@ -198,17 +193,29 @@ static uint32_t eval(int p, int q, bool *success){
     }
 
     if(p > q){
-        syntax_error(q, "invalid operand.");
-        *success = false;
+        syntax_error(q, "invalid operand.", success);
         return 0;
     }
     else if(p == q){
-        if(tokens[p].type >= DEC_NUM){
+        if(tokens[p].type == REG){
+            char *reg = tokens[p].str;
+            reg++;  // skip $
+            
+            if(strcasecmp(reg, "eip") == 0) return cpu.eip;
+            for(int i = 0; i < 8; i++){
+                if(strcasecmp(reg, regsl[i]) == 0) return reg_l(i);
+                if(strcasecmp(reg, regsw[i]) == 0) return reg_w(i);
+                if(strcasecmp(reg, regsb[i]) == 0) return reg_b(i);
+            }
+
+            syntax_error(p, "invalid register.", success);
+            return 0;
+        }
+        else if(tokens[p].type >= DEC_NUM){
             return strtol(tokens[p].str, NULL, 0);
         }
         else{
-            syntax_error(p, "need operands.");
-            *success = false;
+            syntax_error(p, "need operands.", success);
             return 0;
         }
     }
@@ -218,8 +225,7 @@ static uint32_t eval(int p, int q, bool *success){
     else{
         int op = get_dominant_operator(p, q);
         if(op < 0){
-            syntax_error(p, "no dominant operator");
-            *success = false;
+            syntax_error(p, "no dominant operator", success);
             return 0;
         }
 
