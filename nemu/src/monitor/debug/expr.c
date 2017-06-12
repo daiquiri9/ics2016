@@ -182,7 +182,6 @@ static uint32_t get_dominant_operator(int p, int q){
 }
 
 static void syntax_error(int i, char *msg){
-    /**success = false;*/
     printf("Syntax error near tokens[%d]:%s, %s\n", i, tokens[i].str, msg);
     /*printf("Syntax error near tokens[%d]:%s\n", i, tokens[i].str);*/
 }
@@ -247,6 +246,8 @@ static uint32_t eval(int p, int q, bool *success){
                 return val1 / val2;
             case EQ:
                 return val1 == val2;
+            case DEREF:
+                return swaddr_read(val2, 4);
             default:
                 *success = false;
                 break;
