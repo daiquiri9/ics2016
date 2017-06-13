@@ -115,6 +115,7 @@ static int cmd_info(char *args) {
     if(args == NULL){
         printf("Must be followed with an argument!\n");
         printf("Usage: info r\n");
+        printf("       info w\n");
         return 0;
     }
 
@@ -124,9 +125,13 @@ static int cmd_info(char *args) {
     if(arg == 'r'){
         info_reg();
     }
+    else if(arg == 'w'){
+        print_wp();
+    }
     else{
         printf("Invalid argument!\n"); 
         printf("Usage: info r\n");
+        printf("       info w\n");
     }
     return 0;
 }
@@ -192,7 +197,7 @@ static int cmd_p(char *args) {
 static int cmd_w(char *args) {
     if(args == NULL){
         printf("Must be followed with an expression!\n");
-        printf("Usage: w $eip == 0x3000\n");
+        printf("Usage: w $eip == 0x100000\n");
         return 0;
     }
 

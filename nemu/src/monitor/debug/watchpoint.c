@@ -66,3 +66,17 @@ bool catch_wp(){
     }
     return catched;
 }
+
+void print_wp(){
+    if(head == NULL){
+        printf("No watchpoints.\n");
+        return;
+    }
+
+    printf("Num\tWhat\n");
+    WP *p = head;
+    while(p){
+        printf("%d\t%s\n", p->NO, p->expr);
+        p = p->next;
+    }
+}
