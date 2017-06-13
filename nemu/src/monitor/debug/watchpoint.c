@@ -32,7 +32,6 @@ WP* new_wp() {
 
 bool free_wp(int no){
     WP *p = head, *prev = NULL;
-    prev->next = head;
     while(p && p->NO != no){
         prev = p;
         p = p->next;
@@ -43,7 +42,12 @@ bool free_wp(int no){
         return false;
     }
     // found
-    prev->next = p->next;
+    if(prev == NULL) {
+        head = p->next;
+    }
+    else{
+        prev->next = p->next;
+    }
     p->next = free_;
     free_ = p;
     return true;

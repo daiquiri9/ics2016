@@ -49,6 +49,8 @@ static int cmd_p(char *args);
 
 static int cmd_w(char *args);
 
+static int cmd_d(char *args);
+
 static struct {
 	char *name;
 	char *description;
@@ -64,6 +66,7 @@ static struct {
     { "x", "Display memory starting from the given address by N * 4B", cmd_x},
     { "p", "Display the result of expression", cmd_p},
     { "w", "Set watchpoint for expression", cmd_w},
+    { "d", "Delete watchpoint", cmd_d},
 
 };
 
@@ -213,6 +216,24 @@ static int cmd_w(char *args) {
         wp->val = result;
         strcpy(wp->expr, args);
         printf("Watchpoint %d: %s\n", wp->NO, args);
+    }
+    return 0;
+}
+
+static int cmd_d(char *args) {
+    if(args == NULL){
+        printf("Must be followed with the Number of watchpoint!\n");
+        printf("Usage: d 1\n");
+        return 0;
+    }
+
+    int no;
+    if(sscanf(args, "%u", &no) < 1){
+        printf("Invalid number!\n");
+        return 0;
+    }
+    if(free_wp(no) == false){
+        printf("No watchpoint at %d.\n", no);
     }
     return 0;
 }
