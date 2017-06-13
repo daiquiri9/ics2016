@@ -47,6 +47,8 @@ static int cmd_x(char *args);
 
 static int cmd_p(char *args);
 
+static int cmd_w(char *args);
+
 static struct {
 	char *name;
 	char *description;
@@ -58,9 +60,10 @@ static struct {
 
 	/* TODO: Add more commands */
     { "si", "Take N(default: 1) more steps of the execution of the program", cmd_si},
-    { "info", "Display informations about all registers or ...", cmd_info},
+    { "info", "Display informations about all registers or watchpoints", cmd_info},
     { "x", "Display memory starting from the given address by N * 4B", cmd_x},
     { "p", "Display the result of expression", cmd_p},
+    { "w", "Set watchpoint for expression", cmd_w},
 
 };
 
@@ -140,7 +143,7 @@ static void info_reg() {
 static int cmd_x(char *args) {
     if(args == NULL){
         printf("Must be followed with arguments!\n");
-        printf("Usage: x N ADDR\n");
+        printf("Usage: x N EXPR\n");
         return 0;
     }
 
@@ -183,6 +186,29 @@ static int cmd_p(char *args) {
     bool succ = true;
     uint32_t result = expr(args, &succ);
     if(succ) printf("0x%x\n", result);
+    return 0;
+}
+
+static int cmd_w(char *args) {
+    if(args == NULL){
+        printf("Must be followed with an expression!\n");
+        printf("Usage: w $eip == 0x3000\n");
+        return 0;
+    }
+
+    if(strlen(args) > EXPR_LEN){
+        printf("Expression is too long!\n");
+        return 0;
+    }
+
+    bool succ = true;
+    uint32_t result = expr(args, &succ);
+    if(succ) {
+        WP *wp = new_wp();
+        wp->val = result;
+        strcpy(wp->expr, args);
+        printf("Watchpoint %d: %s\n", wp->NO, args);
+    }
     return 0;
 }
 
