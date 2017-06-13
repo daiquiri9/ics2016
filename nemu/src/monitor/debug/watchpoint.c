@@ -48,3 +48,21 @@ bool free_wp(int no){
     free_ = p;
     return true;
 }
+
+bool catch_wp(){
+    bool catched = false;
+    WP *p = head;
+    while(p){
+        bool succ = true;
+        int result = expr(p->expr, &succ);
+        if(p->val != result){
+            printf("Watchpoint %d: %s\n", p->NO, p->expr);
+            printf("Old value = 0x%x\n", p->val);
+            printf("New value = 0x%x\n", result);
+            p->val = result;
+            catched = true;
+        }
+        p = p->next;
+    }
+    return catched;
+}

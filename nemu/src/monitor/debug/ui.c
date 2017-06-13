@@ -184,7 +184,7 @@ static int cmd_p(char *args) {
     }
 
     bool succ = true;
-    uint32_t result = expr(args, &succ);
+    int result = expr(args, &succ);
     if(succ) printf("0x%x\n", result);
     return 0;
 }
@@ -202,7 +202,7 @@ static int cmd_w(char *args) {
     }
 
     bool succ = true;
-    uint32_t result = expr(args, &succ);
+    int result = expr(args, &succ);
     if(succ) {
         WP *wp = new_wp();
         wp->val = result;
