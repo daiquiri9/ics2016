@@ -145,7 +145,21 @@ static int cmd_x(char *args) {
     }
 
     uint32_t n, addr, i, j;
-    sscanf(args, "%u %i", &n, &addr);
+    /*sscanf(args, "%u %i", &n, &addr);*/
+    char *num = strtok(NULL, " ");
+    if(sscanf(num, "%u", &n) < 1){
+        printf("Invalid number!\n");
+        return 0;
+    }
+    char *e = num + strlen(num) + 1;
+    
+    bool succ = true;
+    addr = expr(e, &succ);
+    if(!succ){
+        printf("Must be followed with expression!\n");
+        printf("Usage: x N EXPR\n");
+        return 0;
+    }
 
     for(i = 0; i < n; i += 4){
         printf("0x%08x:\t", addr + i * 4);
