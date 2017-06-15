@@ -127,8 +127,8 @@ static bool make_token(char *e) {
 
 static bool check_parentheses(int p, int q){
     if(tokens[p].type == '(' && tokens[q].type == ')'){
-        int open = 0;
-        for(int i = p + 1; i < q; i++){
+        int open = 0, i;
+        for(i = p + 1; i < q; i++){
             if(tokens[i].type == '('){
                 open++;
             }
@@ -148,10 +148,10 @@ static bool check_parentheses(int p, int q){
 }
 
 static uint32_t get_dominant_operator(int p, int q){
-    int open = 0;
+    int open = 0, i;
     int op = -1, dominant = 100;
 
-    for(int i = p; i <= q; i++){
+    for(i = p; i <= q; i++){
         int cur_type = tokens[i].type;
         int cur_priority = tokens[i].priority;
 
@@ -211,7 +211,8 @@ static uint32_t eval(int p, int q, bool *success){
             reg++;  // skip $
             
             if(strcasecmp(reg, "eip") == 0) return cpu.eip;
-            for(int i = 0; i < 8; i++){
+            int i;
+            for(i = 0; i < 8; i++){
                 if(strcasecmp(reg, regsl[i]) == 0) return reg_l(i);
                 if(strcasecmp(reg, regsw[i]) == 0) return reg_w(i);
                 if(strcasecmp(reg, regsb[i]) == 0) return reg_b(i);
@@ -290,7 +291,8 @@ uint32_t expr(char *e, bool *success) {
 		return 0;
 	}
 
-    for(int i = 0; i < nr_token; i++){
+    int i;
+    for(i = 0; i < nr_token; i++){
         // * -> DEREF
         if(tokens[i].type == '*' && (i == 0 || 
                     (tokens[i - 1].type != ')' && tokens[i - 1].type < 512))){
