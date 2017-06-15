@@ -53,6 +53,9 @@ clean: clean-cpp
 
 ##### some convinient rules #####
 
+count:
+	find nemu -name "*.[ch]" | xargs cat | grep -v "^$$" | wc -l
+
 USERPROG := obj/testcase/mov
 ENTRY := $(USERPROG)
 
