@@ -19,5 +19,68 @@ void init_wp_pool() {
 }
 
 /* TODO: Implement the functionality of watchpoint */
+WP* new_wp() {
+    if(free_ == NULL) assert(0);
 
+    WP *new = free_;
+    free_ = free_->next;
 
+    new->next = head;
+    head = new;
+    return new;
+}
+
+bool free_wp(int no){
+    WP *p = head, *prev = NULL;
+    while(p && p->NO != no){
+        prev = p;
+        p = p->next;
+    }
+
+    // unfound
+    if(p == NULL) {
+        return false;
+    }
+    // found
+    if(prev == NULL) {
+        head = p->next;
+    }
+    else{
+        prev->next = p->next;
+    }
+    p->next = free_;
+    free_ = p;
+    return true;
+}
+
+bool catch_wp(){
+    bool catched = false;
+    WP *p = head;
+    while(p){
+        bool succ = true;
+        int result = expr(p->expr, &succ);
+        if(p->val != result){
+            printf("Watchpoint %d: %s\n", p->NO, p->expr);
+            printf("Old value = 0x%x\n", p->val);
+            printf("New value = 0x%x\n", result);
+            p->val = result;
+            catched = true;
+        }
+        p = p->next;
+    }
+    return catched;
+}
+
+void print_wp(){
+    if(head == NULL){
+        printf("No watchpoints.\n");
+        return;
+    }
+
+    printf("Num\tWhat\n");
+    WP *p = head;
+    while(p){
+        printf("%d\t%s\n", p->NO, p->expr);
+        p = p->next;
+    }
+}

@@ -38,6 +38,19 @@ static int cmd_q(char *args) {
 
 static int cmd_help(char *args);
 
+static int cmd_si(char *args);
+
+static int cmd_info(char *args);
+static void info_reg();
+
+static int cmd_x(char *args);
+
+static int cmd_p(char *args);
+
+static int cmd_w(char *args);
+
+static int cmd_d(char *args);
+
 static struct {
 	char *name;
 	char *description;
@@ -48,6 +61,12 @@ static struct {
 	{ "q", "Exit NEMU", cmd_q },
 
 	/* TODO: Add more commands */
+    { "si", "Take N(default: 1) more steps of the execution of the program", cmd_si},
+    { "info", "Display informations about all registers or watchpoints", cmd_info},
+    { "x", "Display memory starting from the given address by N * 4B", cmd_x},
+    { "p", "Display the result of expression", cmd_p},
+    { "w", "Set watchpoint for expression", cmd_w},
+    { "d", "Delete watchpoint", cmd_d},
 
 };
 
@@ -74,6 +93,149 @@ static int cmd_help(char *args) {
 		printf("Unknown command '%s'\n", arg);
 	}
 	return 0;
+}
+
+static int cmd_si(char *args) {
+    if(!args){
+        cpu_exec(1);
+        return 0;
+    }
+
+    uint32_t n;
+    sscanf(args, "%u", &n);
+    if(n){
+        cpu_exec(n);
+    }
+    else{
+        printf("Invalid argument!\n");
+        printf("Usage: si N\n");
+    }
+    return 0;
+
+}
+
+static int cmd_info(char *args) {
+    if(args == NULL){
+        printf("Must be followed with an argument!\n");
+        printf("Usage: info r\n");
+        printf("       info w\n");
+        return 0;
+    }
+
+    char arg;
+    sscanf(args, "%c", &arg);
+
+    if(arg == 'r'){
+        info_reg();
+    }
+    else if(arg == 'w'){
+        print_wp();
+    }
+    else{
+        printf("Invalid argument!\n"); 
+        printf("Usage: info r\n");
+        printf("       info w\n");
+    }
+    return 0;
+}
+
+static void info_reg() {
+    int i = 0;
+
+    for(i = R_EAX; i <= R_EDI; i++){
+        printf("%s: 0x%x\n", regsl[i], reg_l(i));
+    }
+    printf("eip: 0x%x\n", cpu.eip);
+}
+
+static int cmd_x(char *args) {
+    if(args == NULL){
+        printf("Must be followed with arguments!\n");
+        printf("Usage: x N EXPR\n");
+        return 0;
+    }
+
+    uint32_t n, addr, i, j;
+    /*sscanf(args, "%u %i", &n, &addr);*/
+    char *num = strtok(NULL, " ");
+    if(sscanf(num, "%u", &n) < 1){
+        printf("Invalid number!\n");
+        return 0;
+    }
+    char *e = num + strlen(num) + 1;
+    
+    bool succ = true;
+    addr = expr(e, &succ);
+    if(!succ){
+        printf("Must be followed with expression!\n");
+        printf("Usage: x N EXPR\n");
+        return 0;
+    }
+
+    for(i = 0; i < n; i += 4){
+        printf("0x%08x:\t", addr + i * 4);
+        for(j = 0; (i + j) < n && j < 4; j++){
+            uint32_t info = swaddr_read(addr + (i + j) * 4, 4);
+            printf("0x%08x\t", info);
+        }
+        printf("\n");
+    }
+
+    return 0;
+}
+
+static int cmd_p(char *args) {
+    if(args == NULL){
+        printf("Must be followed with an expression!\n");
+        printf("Usage: p $eax + 2 * 3\n");
+        return 0;
+    }
+
+    bool succ = true;
+    int result = expr(args, &succ);
+    if(succ) printf("0x%x\n", result);
+    return 0;
+}
+
+static int cmd_w(char *args) {
+    if(args == NULL){
+        printf("Must be followed with an expression!\n");
+        printf("Usage: w $eip == 0x100000\n");
+        return 0;
+    }
+
+    if(strlen(args) > EXPR_LEN){
+        printf("Expression is too long!\n");
+        return 0;
+    }
+
+    bool succ = true;
+    int result = expr(args, &succ);
+    if(succ) {
+        WP *wp = new_wp();
+        wp->val = result;
+        strcpy(wp->expr, args);
+        printf("Watchpoint %d: %s\n", wp->NO, args);
+    }
+    return 0;
+}
+
+static int cmd_d(char *args) {
+    if(args == NULL){
+        printf("Must be followed with the Number of watchpoint!\n");
+        printf("Usage: d 1\n");
+        return 0;
+    }
+
+    int no;
+    if(sscanf(args, "%u", &no) < 1){
+        printf("Invalid number!\n");
+        return 0;
+    }
+    if(free_wp(no) == false){
+        printf("No watchpoint at %d.\n", no);
+    }
+    return 0;
 }
 
 void ui_mainloop() {
